@@ -1,69 +1,67 @@
+import os
 import discord
 import requests
-import os
 import html
 from discord.ext import commands, tasks
 from dotenv import load_dotenv
 
 # Cargar las variables de entorno
 load_dotenv()
+
 TOKEN = os.getenv("TOKEN")
 CHANNEL_ID = int(os.getenv("CHANNEL_ID"))
 
-# Configurar intents y crear el bot
+# Activar los intents adecuados
 intents = discord.Intents.default()
-intents.message_content = True
+intents.message_content = True  # Necesario para que funcionen los comandos
+
 bot = commands.Bot(command_prefix="!", intents=intents)
 
-# Función para obtener el versículo del día en español latinoamericano
-def obtener_versiculo():
-    url = "https://www.bible.com/es/verse-of-the-day"
+async def obtener_versiculo():
     try:
-        response = requests.get(url)
-        response.raise_for_status()
-        data = response.text
+        url = "https://www.biblegateway.com/votd/get/?format=json&version=RVR1960"
+        respuesta = requests.get(url)
+        data = respuesta.json()
 
-        # Extraer el versículo y la referencia utilizando cadenas de búsqueda específicas
-        start_index = data.find('<div class="votd-verse-text">') + len('<div class="votd-verse-text">')
-        end_index = data.find('</div>', start_index)
-        versiculo_texto = data[start_index:end_index].strip()
+        versiculo = html.unescape(data["votd"]["content"])  # Decodificar caracteres HTML
+        referencia = data["votd"]["display_ref"]
+        mensaje = f"📖 **{referencia}**\n{versiculo}"
 
-        start_index = data.find('<div class="votd-verse-reference">') + len('<div class="votd-verse-reference">')
-        end_index = data.find('</div>', start_index)
-        referencia = data[start_index:end_index].strip()
-
-        # Decodificar entidades HTML
-        versiculo_texto = html.unescape(versiculo_texto)
-        referencia = html.unescape(referencia)
-
-        mensaje = f"📖 **{referencia}**\n*{versiculo_texto}*"
-        return mensaje
-
+        return mensaje[:4000]  # Asegurar que no exceda el límite de Discord
     except Exception as e:
         return f"⚠️ No se pudo obtener el versículo. Error: {e}"
 
-# Tarea programada para enviar el versículo diariamente a las 8 AM
 @tasks.loop(hours=24)
 async def enviar_versiculo_diario():
-    await bot.wait_until_ready()
+    await bot.wait_until_ready()  # Asegurar que el bot está listo antes de ejecutar la tarea
     canal = bot.get_channel(CHANNEL_ID)
     if canal:
-        mensaje = obtener_versiculo()
-        await canal.send(mensaje)
-    else:
-        print("⚠️ Error: No se encontró el canal.")
+        mensaje = await obtener_versiculo()
+        print(f"🔍 Enviando versículo ({len(mensaje)} caracteres)")  # Depuración
+        for parte in dividir_mensaje(mensaje):
+            await canal.send(parte)
 
-# Comando para obtener el versículo manualmente
-@bot.command(name="versiculo")
-async def versiculo(ctx):
-    mensaje = obtener_versiculo()
-    await ctx.send(mensaje)
+# Función para dividir mensajes largos respetando los límites de Discord
+def dividir_mensaje(mensaje, limite=2000):
+    partes = []
+    while len(mensaje) > limite:
+        corte = mensaje.rfind("\n", 0, limite)
+        if corte == -1:
+            corte = limite
+        partes.append(mensaje[:corte])
+        mensaje = mensaje[corte:].strip()
+    partes.append(mensaje)
+    return partes
 
-# Evento cuando el bot está listo
 @bot.event
 async def on_ready():
     print(f"✅ {bot.user} está en línea.")
     enviar_versiculo_diario.start()
 
-# Iniciar el bot
+@bot.command()
+async def versiculo(ctx):
+    mensaje = await obtener_versiculo()
+    for parte in dividir_mensaje(mensaje):
+        await ctx.send(parte)
+
 bot.run(TOKEN)
