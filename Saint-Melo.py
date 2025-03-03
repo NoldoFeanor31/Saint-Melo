@@ -4,6 +4,7 @@ import requests
 import html
 from discord.ext import commands, tasks
 from dotenv import load_dotenv
+import webserver
 
 # Cargar las variables de entorno
 load_dotenv()
@@ -61,4 +62,5 @@ async def versiculo(ctx):
     for parte in dividir_mensaje(mensaje):
         await ctx.send(parte)
 
+webserver.keep_alive()
 bot.run(TOKEN)
