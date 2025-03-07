@@ -2,6 +2,7 @@ import os
 import discord
 import requests
 import html
+import re
 from discord.ext import commands, tasks
 from dotenv import load_dotenv
 import webserver
@@ -25,6 +26,7 @@ async def obtener_versiculo():
         data = respuesta.json()
 
         versiculo = html.unescape(data["votd"]["content"])  # Decodificar caracteres HTML
+        versiculo = re.sub(r'<.*?>', '', versiculo)  # Eliminar etiquetas HTML
         referencia = data["votd"]["display_ref"]
         mensaje = f"📖 **{referencia}**\n{versiculo}"
 
