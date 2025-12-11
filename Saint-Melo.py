@@ -32,7 +32,7 @@ async def obtener_versiculo():
 
         return mensaje
     except Exception as e:
-        return f"⚠️ No se pudo obtener el versículo. Error: {e}"
+        return f" No se pudo obtener el versículo. Error: {e}"
 
 @tasks.loop(hours=24)
 async def enviar_versiculo_diario():
@@ -55,7 +55,7 @@ def dividir_mensaje(mensaje, limite=2000):
 
 @bot.event
 async def on_ready():
-    print(f"✅ {bot.user} está en línea.")
+    print(f" {bot.user} está en línea.")
     enviar_versiculo_diario.start()
 
 @bot.command()
