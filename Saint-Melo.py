@@ -28,7 +28,7 @@ async def obtener_versiculo():
         versiculo = html.unescape(data["votd"]["content"])  # Decodificar caracteres HTML
         versiculo = re.sub(r'<.*?>', '', versiculo)  # Eliminar etiquetas HTML
         referencia = data["votd"]["display_ref"]
-        mensaje = f"📖 **{referencia}**\n{versiculo}"
+        mensaje = f"**{referencia}**\n{versiculo}"
 
         return mensaje
     except Exception as e:

@@ -6,7 +6,7 @@ Un bot de Discord que envía un versículo diario en español latinoamericano.
 
 1. Clona este repositorio:
     ```bash
-    git clone https://github.com/tu-usuario/tu-repo.git
+    git clone https://github.com/NoldoFeanor31/Saint-Melo.git
     ```
 
 2. Crea un entorno virtual y actívalo:
